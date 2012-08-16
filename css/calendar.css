@@ -1,0 +1,24 @@
+#calendar css .calBtn {
+	PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; FONT: 11px Tahoma,Arial,sans-serif; PADDING-TOP: 0px
+}
+.purpleCell {
+	FONT: bold 12px Arial,sans-serif; COLOR: #555; BACKGROUND-COLOR: #fff
+}
+.whiteCell {
+	PADDING-RIGHT: 2px; PADDING-LEFT: 2px; PADDING-BOTTOM: 0px; FONT: 11px Tahoma,Arial,sans-serif; COLOR: #006; PADDING-TOP: 0px; BACKGROUND-COLOR: #fff
+}
+.sundayCell {
+	PADDING-RIGHT: 2px; PADDING-LEFT: 2px; PADDING-BOTTOM: 0px; FONT: 11px Tahoma,Arial,sans-serif; COLOR: #b00; PADDING-TOP: 0px; BACKGROUND-COLOR: #fff
+}
+.weekDay {
+	PADDING-RIGHT: 3px; PADDING-LEFT: 3px; PADDING-BOTTOM: 1px; FONT: 11px Arial,sans-serif; COLOR: #000; PADDING-TOP: 1px; BACKGROUND-COLOR: #fff1db
+}
+.blackCell {
+	BORDER-RIGHT: #ccc 1px solid; PADDING-RIGHT: 2px; BORDER-TOP: #ccc 1px solid; PADDING-LEFT: 2px; PADDING-BOTTOM: 0px; FONT: 11px Tahoma, Arial,sans-serif; BORDER-LEFT: #ccc 1px solid; COLOR: #006; PADDING-TOP: 0px; BORDER-BOTTOM: #ccc 1px solid; BACKGROUND-COLOR: #fff
+}
+.overCell {
+	PADDING-RIGHT: 2px; PADDING-LEFT: 2px; PADDING-BOTTOM: 0px; FONT: 11px Tahoma,Arial,sans-serif; COLOR: #000; PADDING-TOP: 0px; BACKGROUND-COLOR: #eee
+}
+#candarLeer {
+	LEFT: 0px; VISIBILITY: hidden; POSITION: absolute; TOP: 0px; z-index: 100;
+}

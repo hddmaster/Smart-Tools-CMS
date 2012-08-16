@@ -1,0 +1,30 @@
+# ---------------------------------------------------------------
+# phpExifRW
+# An EXIF information reader and write PHP class.
+# Copyright (C) 2003  SANIsoft
+# Licensed under terms of GNU Lesser General Public License
+# ---------------------------------------------------------------
+20-September-2003 Version 0.6
+  Added support for 'Artist' and 'Copyright' tags
+  Original datetime of image is now showing up
+  Removed all warning and some Code clean-up
+
+2-august-2003 Version 0.5
+ - Added Support for RICOH camera Images 
+ - Fixed a minor bug, image dimension not showing up with several camera images.
+ - Showing JPEG Image comment
+
+6-June-2003 Version 0.4
+ - Added caching system for thumbnail storage.
+
+21-Apr-2003 Version 0.3
+ - Fixed several bugs that originated with Nikon and Canon Cameras
+
+24-Mar-2003 Version 0.2
+ - Added file 'showThumbnail.php' to show thumbnail
+   of the JPEG file extracted from EXIF information
+
+20-Mar-2003   Version 0.1
+ - initial release
+
+------------------------------------------------------------------

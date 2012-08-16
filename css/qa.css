@@ -1,0 +1,15 @@
+.dhtmlgoodies_question{	
+	padding: 5px 0px 5px 0px;
+	overflow:hidden;
+	cursor:pointer;
+}
+.dhtmlgoodies_answer{
+	visibility:hidden;
+	height:0px;
+	overflow:hidden;
+	position:relative;
+}
+.dhtmlgoodies_answer_content{
+	padding:0px;
+	position:relative;
+}

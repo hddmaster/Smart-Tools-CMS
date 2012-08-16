@@ -1,0 +1,210 @@
+<?
+class Site_generate {
+	public $level = 0;
+	public $max_level = 0;
+	public $out = '';
+	public $pages = array();
+   
+	function __construct() {
+    }
+   
+	public function page_create($id, $update_status = true) {
+		$result = mysql_query("select * from pages where page_id=$id");
+		if(mysql_num_rows($result)> 0) {
+			$row = mysql_fetch_array($result);
+			$parent_id = $row['parent_id'];
+
+			//проверка активности родителя, если уровень > 1. Если неактивен -> ошибка активации
+			$this->level = 0;
+			if ($this->get_num_level($id) > 1) {
+				$res = mysql_query("select * from pages where page_id=$parent_id");
+				if (mysql_num_rows($res) > 0) {
+					$r = mysql_fetch_array($res);
+					if ($r['status'] == 0) return false;
+				}
+			}
+
+			//определение пути к разделу
+			if ($row['page_url'] == '') {
+				$pathdir = $_SERVER['DOCUMENT_ROOT'];
+				$filename_main = $_SERVER['DOCUMENT_ROOT']."/index.php";
+				$path = '';
+			} else {
+				$path = $this->get_reverse_path($row['page_id']);
+				$pathdir = $_SERVER['DOCUMENT_ROOT'].$path;
+				if (file_exists($pathdir)) chmod($pathdir, 0777); //если дир. сущ.
+				if (!file_exists($pathdir)) {umask(0); mkdir(substr($pathdir,0,strlen($pathdir)-1), 0777);}
+				$filename_main = $pathdir."index.php";
+			}
+
+			$objects = unserialize($row['objects']);
+
+			//подключение шаблона страницы
+			$tpl_id =  $row['tpl_id'];
+			$res = mysql_query("select data from designs where tpl_id = $tpl_id");
+			if (mysql_num_rows($res) > 0) {
+				$r = mysql_fetch_array($res);
+				$content = $r['data'];
+
+				//подстановка переменных
+				$content = strtr ($content, array (
+				"{PAGE_ID}" => $id,
+				"{PAGE_URL}" => $row['page_url'],
+				"{PAGE_TITLE}" => $row['page_title'],
+				"{PAGE_META_KEYW}" => $row['page_meta_keyw'],
+				"{PAGE_META_DESCR}" => $row['page_meta_descr'],
+				"{PAGE_NAME}" => $row['page_name'],
+				"{PAGE_MENU_NAME}" => $row['page_menu_name'],
+				"{LINK_TO_PAGE}" => $path));
+     
+				if (preg_match_all('/\{BLOCK_(\d{1,3})\s?(,\'([\s\.,;!?"\w()\-:]+)?\')?\}/', $content, $matches)) {
+					$i = 0;
+					foreach ($matches[0] as $match) {
+						$block_id = $matches[1][$i];
+	          
+						if (isset($objects[$block_id])) {
+							$text = '';
+							foreach ($objects[$block_id] as $key => $block_values) {
+								$text_content = '';
+								if ($block_values[2] == 1) $text_content .= '<? $cache = new Cache('.$block_values[0].', \'http://\'.$_SERVER[\'HTTP_HOST\'].$_SERVER[\'REQUEST_URI\']); if (!$cache->check_cache()) { ob_start(); ?>';
+								if ($i > 0) $text_content .= '<!-- MODULE_'.$block_values[0].'_begin -->';
+
+								$res_object = mysql_query("select * from content where obj_id = ".$block_values[0]);
+								if (mysql_num_rows($res_object) > 0) {
+									$r_object = mysql_fetch_array($res_object);
+									$object = strtr ($r_object['data'], array ("{MODULE_ID}" => $block_values[0]));
+									$text_content .= $object;
+								}
+
+								$res_template = mysql_query("select * from templates where template_id = ".$block_values[1]);
+								if (mysql_num_rows($res_template) > 0) {
+									$r_template = mysql_fetch_array($res_template);
+									$text_content = str_replace('{TEMPLATE}', $r_template['data'], $text_content);
+								}
+
+								if ($i > 0) $text_content .= '<!-- MODULE_'.$block_values[0].'_end -->';
+								if ($block_values[2] == 1) $text_content .= '<? $cache->create_cache(trim(ob_get_contents())); ob_end_clean(); } echo $cache->get_cache(); ?>';         
+								$text .= $text_content;
+							}
+							$content = preg_replace('/{BLOCK_'.$block_id.'\s?(,\'([\s\.,;!?"\w()\-:]+)?\')?}/', '{CURRENT_BLOCK_VALUES}', $content); 
+							$content = str_replace('{CURRENT_BLOCK_VALUES}', $text, $content); 
+						} else $content = preg_replace('/{BLOCK_'.$block_id.'\s?(,\'([\s\.,;!?"\w()\-:]+)?\')?}/', '', $content); 
+						$i++;
+					}
+				}
+             
+				//сборка содержимого
+				chmod($_SERVER['DOCUMENT_ROOT'], 0777);
+				$f = fopen("$filename_main", "w");
+				flock($f, LOCK_EX);
+				fwrite($f, $content);
+				flock($f, LOCK_UN);
+				fclose($f);
+				chmod($filename_main, 0644);
+				chmod($pathdir, 0755);
+				chmod($_SERVER['DOCUMENT_ROOT'], 0755);
+
+				//обновление статуса 
+				if ($update_status) mysql_query("update pages set status = 1 where page_id=$id");
+			}
+		}
+    }
+
+	public function page_delete($id, $update_status = true) {
+        $result = mysql_query("select * from pages where page_id=$id");
+        if (mysql_num_rows($result) > 0) {
+			$row = mysql_fetch_array($result);
+			$path = $this->get_reverse_path($row['page_id']);
+	
+			if ($row['page_url'] == '') $path = '/';
+			$pathdir = $_SERVER['DOCUMENT_ROOT'].$path;
+			$filename = $pathdir."index.php";
+			$parent_id = $row['parent_id'];
+	
+			unlink($filename);
+			if ($row['page_url'] != '') rmdir($pathdir);
+			if ($update_status) mysql_query("update pages set status=0, visibility=0 where page_id=$id");
+        }
+    }
+   
+	public function get_path($page_id, $prefix = "/") {
+		$result = mysql_query("select * from pages where page_id = $page_id");
+		if (mysql_num_rows($result) > 0) {
+			while ($row = mysql_fetch_array($result)) {
+				if ($row['page_url'] != '') $this->out .= $prefix.$row['page_url'];
+				$this->get_path($row['parent_id'], "/");
+			}
+		} 
+		return $this->out;
+    }
+
+	public function get_reverse_path($page_id) {
+		$this->out = '';
+		$path = $this->get_path($page_id);
+		$path_values = array_reverse(explode ("/", $path));
+		$path= ''; foreach ($path_values as $value) $path = $path.'/'.$value;
+		return $path;
+    }
+ 
+	public function get_num_level($page_id) {
+		$result = mysql_query("select * from pages where page_id = $page_id");
+		if (mysql_num_rows($result) > 0) {
+			while ($row = mysql_fetch_array($result)) {
+				$this->level++;
+				$this->get_num_level($row['parent_id']);
+			}
+		}
+		return $this->level;
+    }
+
+	public function get_max_level($parent_id) {
+		$result = mysql_query("select * from pages where parent_id = $parent_id");
+		if(mysql_num_rows($result) > 0) {
+			while ($row = mysql_fetch_array($result)) {
+				$this->level = 0;
+				$cur_level = get_num_level($row['page_id']);
+				if ($cur_level > $this->max_level) $this->max_level = $cur_level;
+				$this->get_max_level($row['page_id']);
+			}
+		}
+		return $this->max_level;
+    }
+
+	public function get_pages($parent_id) {
+		$result = mysql_query("select * from pages where parent_id=$parent_id order by order_id asc");
+		while ($row = mysql_fetch_array($result)) {
+			$this->pages[] = $row['page_id'];
+			$this->get_pages($row['page_id']);
+		}
+		return $this->num_active_pages;
+    }
+   
+	public function find_pages($type, $id) {
+		$pages = array();
+		$result = mysql_query("select * from pages where status=1");
+		if (mysql_num_rows($result) > 0) {
+			while ($row = mysql_fetch_array($result)) {
+				$key = false;
+				if ($type == 'design') if($row['tpl_id'] == $id) $key = true;
+				if ($type == 'module' || $type == 'template') {
+					$objects = unserialize($row['objects']);
+					foreach ($objects as $block_id => $block_values) {
+						foreach ($block_values as $block => $values) {
+							switch($type) {
+								case 'module': {if ($values[0] == $id) $key = true;} break;
+								case 'template': {if ($values[1] == $id) $key = true;} break;
+							}
+						}
+					}
+				}
+				if($key) $pages[] = $row['page_id'];
+			}
+		}
+		return $pages; 
+    }
+
+	public function site_generate_by_array($pages) {
+		foreach ($pages as $page_id) $this->page_create($page_id);
+    }
+}
+?>
