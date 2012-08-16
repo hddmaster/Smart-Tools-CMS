@@ -1,0 +1,9 @@
+<!-- Smart Tools CMS banner -->
+<style type="text/css">.stbaner {filter:progid:DXImageTransform.Microsoft.Alpha(opacity=10); -moz-opacity: 0.1; -khtml-opacity: 0.1; opacity: 0.1;}}</style>
+<script language="javascript" type="text/javascript">
+ref = escape(document.referrer);
+document.cookie="stcms=1; path=/; domain=.<?=DOMAIN?>";
+cookies = document.cookie?"yes":"no";
+document.write('<img src="http://www.<?=DOMAIN?>/admin/modules/counter/counter.php?ref=' + ref + '&cookies=' + cookies + '" width="1" height="1" border="0" alt="Smart Tools CMS" title="Smart Tools CMS" class="stbaner"/>');
+</script>
+<!-- end of Smart Tools CMS banner -->
